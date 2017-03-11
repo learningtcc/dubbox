@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+       xmlns:p="http://www.springframework.org/schema/p" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
+
+	<import resource="jms.xml"/>
+    
+    <dubbo:application name="dubbo-demo-provider"/>
+
+    <dubbo:registry address="multicast://224.5.6.7:1234"/>
+
+    <dubbo:protocol id="jms" name="jms" p:queueConnectionFactory="#queueConnectionFactory" p:queue="#queue" />
+		
+		
+	<bean id="demoService" class="com.alibaba.dubbo.examples.rpc.jms.DemoServiceImpl"/>
+
+    <dubbo:service protocol="jms" interface="com.alibaba.dubbo.examples.rpc.jms.DemoService" ref="demoService"/>
+		
+		
+    
+</beans>

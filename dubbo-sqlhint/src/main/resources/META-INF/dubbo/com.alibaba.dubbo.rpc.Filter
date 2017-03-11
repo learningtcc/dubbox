@@ -1,0 +1,2 @@
+mycatRouterProviderFilter=com.alibaba.dubbo.sqlhint.dubbo.filter.sqlhint.RouterProviderFilter
+mycatRouterConsumerFilter=com.alibaba.dubbo.sqlhint.dubbo.filter.sqlhint.RouterConsumerFilter

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.springframework.org/schema/beans"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd"
+           default-autowire="byName">
+	
+	<!-- 二阶恢复 -->
+	<bean id="hangTransactionTask" class="org.github.dtsopensource.schedule.taskTracker.task.HangTransactionTask" />
+	
+	<!-- 用于dts-server处理remote任务请求 -->
+	<bean id="taskTrackerMap" class="org.springframework.beans.factory.config.MapFactoryBean">
+		<property name="sourceMap">
+			<map>
+				<entry key="hangTransaction" value-ref="hangTransactionTask" />
+			</map>
+		</property>
+	 </bean>
+	 
+	 <!-- dts-server 端HttpServerScheduleProtocol服务 -->
+	 <bean id="httpServerScheduleProtocol" class="org.github.dtsopensource.server.schedule.http.impl.HttpServerScheduleProtocol">
+	 	<property name="dataSource" ref="dts_druid-dataSource" />
+	 	<property name="taskTrackerMap" ref="taskTrackerMap" />
+	 </bean>
+</beans>

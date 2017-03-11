@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"
+	default-autowire="byName">
+
+	<bean id="dts_druid-dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init">
+		<property name="driverClassName" value="${druid.mysql.driver}"></property>
+		<property name="url" value="${druid.jdbc.url}"></property>
+		<property name="username" value="${druid.username}" />
+		<property name="password" value="${druid.password}" />
+		<property name="initialSize" value="${druid.initialSize}" />
+		<property name="minIdle" value="${druid.minIdle}" />
+		<property name="maxActive" value="${druid.maxActive}" />
+	</bean>
+
+	<!-- dts连接方式 -->
+	<bean id="dtsConfig" class="org.github.dtsopensource.server.share.DTSConfig">
+		<property name="dtsManageType" value="LOCAL"></property>
+		<property name="app" value="JRTZ"></property>
+		<property name="requestActivityRuleURL" value="http://10.139.53.19:9080/dtsServer/requestRule"></property>
+	</bean>
+
+	<!-- dts manager -->
+	<bean id="localDTSManager" class="org.github.dtsopensource.core.manager.LocalDTSManager">
+		<property name="dataSource" ref="dts_druid-dataSource"></property>
+	</bean>
+</beans>
