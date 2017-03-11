@@ -27,23 +27,23 @@
     <!-- 二阶事务恢复配置 -->
     <bean id="localHangTransactionJobTracker" class="org.github.dtsopensource.schedule.jobTracker.LocalJobTrackerDelegate">
     	<!-- 本地任务注册器 -->
-    	<property name="jobRegister" ref="zookeeperJobRegister"></property>
+    	<property name="jobRegister" ref="zookeeperJobRegister" />
     	<!-- 本地任务执行解析器 -->
-    	<property name="timerParse" ref="hangTransactionTimerParse"></property>
+    	<property name="timerParse" ref="hangTransactionTimerParse" />
     	<!-- 系统配置 -->
-    	<property name="dtsConfig" ref="dtsConfig"></property>
+    	<property name="dtsConfig" ref="dtsConfig" />
     	<!-- IDTSStore schedule数据源 -->
-    	<property name="dataSource" ref="biz_druid-dataSource"></property>
+    	<property name="dataSource" ref="biz_druid-dataSource" />
     	<!-- 要执行的任务,目前一个，后续可以拓展成数组，如果配置成数组则表示这些任务的执行上述规则都是一致的 -->
-    	<property name="taskTracker" ref="hangTransactionTask"></property>
+    	<property name="taskTracker" ref="hangTransactionTask" />
     </bean>
     
     <!-- 任务注册器 -->
     <bean id="zookeeperJobRegister" class="org.github.dtsopensource.schedule.register.zookeeper.ZookeeperJobRegister">
     	<!-- 要连接的zk地址 -->
-    	<property name="zkConnectionString" value="10.139.103.1:2181"></property>
-    	<property name="ephemeralZnodeParent" value="/dts-local-example"></property>
-    	<property name="ephemeralZnodeNamePrefix" value="server-"></property>
+    	<property name="zkConnectionString" value="10.139.103.1:2181" />
+    	<property name="ephemeralZnodeParent" value="/dts-local-example" />
+    	<property name="ephemeralZnodeNamePrefix" value="server-" />
     </bean>
     
     <!-- 任务执行解析器 -->

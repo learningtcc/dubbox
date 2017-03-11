@@ -39,7 +39,6 @@ public class PurchaseService implements IPurchaseService {
 
     @Override
     public String puchase(final PurchaseContext purchaseContext) {
-
         return transactionTemplateBiz.execute(new TransactionCallback<String>() {
 
             @Override

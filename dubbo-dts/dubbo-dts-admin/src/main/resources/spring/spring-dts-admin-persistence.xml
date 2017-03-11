@@ -50,7 +50,5 @@
 		<property name="basePackage" value="org.github.dtsopensource.admin.dao.mapper" />
 		<property name="sqlSessionFactoryBeanName" value="tddlSqlSessionFactory-biz" />
 	</bean>
-
-
 </beans>
 

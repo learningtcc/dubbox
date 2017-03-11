@@ -34,8 +34,7 @@ public abstract class HttpAdapterManager {
     protected void unsupprotMethod(Map<String, Object> params) {
         ResultBase<String> resultBase = new ResultBase<String>();
         resultBase.setDtsResultCode(DTSResultCode.FAIL);
-        resultBase.setMessage("dts-server尚不支持该方法:method:"
-                + ((ProtocolMethod) params.get(ProtocolConstance.requestStoreOperation)).name());
+        resultBase.setMessage("dts-server尚不支持该方法:method:" + ((ProtocolMethod) params.get(ProtocolConstance.requestStoreOperation)).name());
         this.buildSuccessResponse(params, resultBase);
     }
 

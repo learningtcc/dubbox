@@ -13,12 +13,8 @@
 	<context:component-scan base-package="org.github.dtsopensource.server.web"/>
 
 	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-		<property name="location">
-			<value>classpath:config.properties</value>
-		</property>
-		<property name="fileEncoding">
-			<value>UTF-8</value>
-		</property>
+		<property name="location" value="classpath:config.properties"/>
+		<property name="fileEncoding" value="UTF-8" />
 	</bean>
 
 	<import resource="classpath*:spring/*.xml" />

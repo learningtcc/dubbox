@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
 
 <generatorConfiguration>
-    <classPathEntry location="C:\Users\ligaofeng\.m2\repository\mysql\mysql-connector-java\5.1.6\mysql-connector-java-5.1.6.jar"/>
+    <classPathEntry location="D:/m2/Repository/mysql/mysql-connector-java/5.1.41/mysql-connector-java-5.1.41.jar"/>
 
     <context id="DB2Tables" targetRuntime="MyBatis3" defaultModelType="flat">
 
@@ -15,9 +15,8 @@
         </commentGenerator>
 
         <jdbcConnection driverClass="com.mysql.jdbc.Driver"
-                        connectionURL="jdbc:mysql://ip:port/dts_server"
-                        userId="username" password="password">
-                </jdbcConnection>
+        	connectionURL="jdbc:mysql://ip:port/dts_server"
+        	userId="username" password="password" />
         <javaTypeResolver>
             <property name="forceBigDecimals" value="true"/>
         </javaTypeResolver>
@@ -44,6 +43,5 @@
               
 		<table tableName="dts_activity_action_rule" domainObjectName="ActivityActionRuleDO"  enableCountByExample="false" enableUpdateByExample="true" enableDeleteByExample="false"
               enableSelectByExample="true" selectByExampleQueryId="true" />
-
     </context>
 </generatorConfiguration>  
