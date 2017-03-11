@@ -75,6 +75,9 @@ Dubbox adds features like RESTful remoting, Kyro/FST serialization, etc to the p
 
 从dubbox-2.8.4开始，所有依赖库的使用方式将和dubbo原来的一样：即如果要使用REST、Kyro、FST、Jackson等功能，需要用户自行手工添加相关的依赖。例如：
 
+###个人修改
+在dubbox-2.8.4的版本上升级jar版本将GitHub各位大神代码进行整合，主要添加内容：remote添加netty4支持，registry添加了consul支持，rpc添加了jsonrpc、restexpress、thrift升级版本(命名为thrift2)，jms的支持，添加二阶提交代码(dubbo-dts)，添加SQL路由解析filter
+
 ### REST风格远程调用
 
 ```xml
