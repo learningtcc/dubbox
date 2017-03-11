@@ -1,9 +1,7 @@
 package org.github.dtsopensource.server.share.rule.entity;
 
 import java.io.Serializable;
-
 import com.alibaba.fastjson.JSON;
-
 import lombok.Getter;
 import lombok.Setter;
 

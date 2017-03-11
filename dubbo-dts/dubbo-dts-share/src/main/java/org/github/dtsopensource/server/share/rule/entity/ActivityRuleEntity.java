@@ -2,11 +2,8 @@ package org.github.dtsopensource.server.share.rule.entity;
 
 import java.io.Serializable;
 import java.util.List;
-
 import org.github.dtsopensource.server.share.exception.DTSRuntimeException;
-
 import com.alibaba.fastjson.JSON;
-
 import lombok.Getter;
 import lombok.Setter;
 

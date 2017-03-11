@@ -1,0 +1,30 @@
+DROP TABLE IF EXISTS `dts_activity_action_rule`;
+CREATE TABLE `dts_activity_action_rule` (
+`biz_action`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`biz_action_name`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`biz_type`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`service`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`clazz_name`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`trans_recovery_id`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`is_deleted`  char(1) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`gmt_created`  timestamp NOT NULL DEFAULT 'current_timestamp()' ON UPDATE CURRENT_TIMESTAMP ,
+`gmt_modified`  timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ,
+`creator`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`modifier`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL 
+)ENGINE=InnoDB DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;
+
+-- ----------------------------
+-- Table structure for `dts_activity_rule`
+-- ----------------------------
+DROP TABLE IF EXISTS `dts_activity_rule`;
+CREATE TABLE `dts_activity_rule` (
+`biz_type`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`app`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`app_cname`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`biz_type_name`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`is_deleted`  char(1) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`gmt_created`  timestamp NOT NULL DEFAULT 'current_timestamp()' ON UPDATE CURRENT_TIMESTAMP ,
+`gmt_modified`  timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ,
+`creator`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL ,
+`modifier`  varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL 
+)ENGINE=InnoDB DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci;

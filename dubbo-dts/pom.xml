@@ -19,5 +19,8 @@
 		<module>dubbo-dts-schedule</module>
 		<module>dubbo-dts-server</module>
 		<module>dubbo-dts-server-web</module>
+		<module>dubbo-dts-admin</module>
+		<module>dubbo-dts-localdemo-web</module>
+		<module>dubbo-dts-remotedemo-web</module>
 	</modules>
 </project>
