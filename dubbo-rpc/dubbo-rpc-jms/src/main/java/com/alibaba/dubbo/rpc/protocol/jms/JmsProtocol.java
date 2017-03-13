@@ -17,6 +17,8 @@ public class JmsProtocol extends AbstractProtocol {
 	// p:
 	private Queue queue;
 
+	private QueueConnectionFactory queueConnectionFactory;
+
 	public Queue getQueue() {
 		return queue;
 	}
@@ -32,8 +34,6 @@ public class JmsProtocol extends AbstractProtocol {
 	public void setQueueConnectionFactory(QueueConnectionFactory queueConnectionFactory) {
 		this.queueConnectionFactory = queueConnectionFactory;
 	}
-
-	private QueueConnectionFactory queueConnectionFactory;
 
 	public int getDefaultPort() {
 		return DEFAULT_PORT;

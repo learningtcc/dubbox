@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
@@ -19,7 +18,4 @@
 	<bean id="demoService" class="com.alibaba.dubbo.examples.rpc.jms.DemoServiceImpl"/>
 
     <dubbo:service protocol="jms" interface="com.alibaba.dubbo.examples.rpc.jms.DemoService" ref="demoService"/>
-		
-		
-    
 </beans>

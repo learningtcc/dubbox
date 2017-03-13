@@ -1,15 +1,23 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<bean id="queueConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
 		<property name="brokerURL">
 			<value>tcp://localhost:61616</value>
 		</property>
 	</bean>
+    
+    <bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+		<!-- 目标ConnectionFactory对应真实的可以产生JMS Connection的ConnectionFactory -->  
+  		<property name="targetConnectionFactory" ref="queueConnectionFactory"></property>
+  		<!-- 同上，同理 -->
+		<!-- <constructor-arg ref="amqConnectionFactory" /> -->
+		<!-- Session缓存数量 -->
+		<property name="sessionCacheSize" value="100" />
+	</bean>
 	
-    <bean id="queue" class="org.apache.activemq.command.ActiveMQQueue"
-        autowire="constructor">
+    <bean id="queue" class="org.apache.activemq.command.ActiveMQQueue" autowire="constructor">
         <constructor-arg value="DUBBO" />
     </bean>
     
