@@ -1,0 +1,1 @@
+transactiontreeconsumer=com.alibaba.dubbo.transactiontree.aop.dubbo.TransactionConsumerFilter

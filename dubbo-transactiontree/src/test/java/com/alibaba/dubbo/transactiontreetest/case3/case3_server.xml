@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+	xsi:schemaLocation="
+     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+     http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd
+     http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+     http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+     http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+     http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+     ">
+	
+	<context:component-scan base-package="me.cungu.transactiontreetest.case3" />
+	
+	<bean class="me.cungu.transactiontree.util.BeanFactoryUtil">
+	</bean>
+	
+	<bean id="transactionStore" class="me.cungu.transactiontree.repository.LevelDbStore">
+		<property name="dataDir" value="txtreedb1" />
+	</bean>
+	
+	<bean id="transactionRepository" class="me.cungu.transactiontree.repository.DefaultTransactionRepository">
+		<property name="transactionStore" ref="transactionStore" />
+	</bean>
+	
+	<bean id="transactionManager" class="me.cungu.transactiontree.DefaultTransactionManager">
+		<property name="transactionRepository" ref="transactionRepository" />
+	</bean>
+	
+	<dubbo:application name="me.cungu.transactiontree" logger="slf4j" />
+	<dubbo:registry address="zookeeper://127.0.0.1:2181" />
+	<dubbo:protocol name="dubbo" port="-1" />
+	<dubbo:provider delay="-1" />
+	<dubbo:consumer check="false" />
+	
+	<dubbo:service id="clientExport" interface="me.cungu.transactiontreetest.case3.Client" ref="clientImpl" />
+	
+	<dubbo:service id="clientExport1" interface="me.cungu.transactiontreetest.case3.Client" version="1.1111.11" ref="clientImpl" />
+	
+</beans>
