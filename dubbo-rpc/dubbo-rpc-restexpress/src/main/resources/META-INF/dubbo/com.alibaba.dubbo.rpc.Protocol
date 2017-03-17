@@ -1,1 +1,1 @@
-rest-express=com.alibaba.dubbo.rpc.protocol.restexpress.RestExpressProtocol
+restExpress=com.alibaba.dubbo.rpc.protocol.restexpress.RestExpressProtocol
