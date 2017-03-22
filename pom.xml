@@ -57,6 +57,7 @@
         <module>dubbo-sqlhint</module>
         <module>dubbo-dts</module>
         <module>dubbo-transactiontree</module>
+        <module>dubbo-switch</module>
 	</modules>
 	<profiles>
 		<profile>
