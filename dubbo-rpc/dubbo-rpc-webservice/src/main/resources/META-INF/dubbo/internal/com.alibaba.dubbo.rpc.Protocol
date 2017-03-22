@@ -1,1 +1,1 @@
-com.alibaba.dubbo.rpc.protocol.webservice.WebServiceProtocol
+wsProtocol=com.alibaba.dubbo.rpc.protocol.webservice.WebServiceProtocol
