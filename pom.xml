@@ -59,6 +59,7 @@
         <module>dubbo-transactiontree</module>
         <module>dubbo-switch</module>
         <module>dubbo-hystrix-support</module>
+        <module>dubbo-solr</module>
 	</modules>
 	<profiles>
 		<profile>

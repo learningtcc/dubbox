@@ -1,0 +1,623 @@
+/*
+ * Copyright 2012 - 2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.frank.search.solr.repository.query;
+
+import com.frank.search.solr.core.query.*;
+import com.frank.search.solr.core.SolrOperations;
+import com.frank.search.solr.core.convert.DateTimeConverters;
+import org.apache.solr.common.params.HighlightParams;
+import org.springframework.core.convert.support.GenericConversionService;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+import org.springframework.data.repository.core.EntityMetadata;
+import org.springframework.data.repository.query.RepositoryQuery;
+import com.frank.search.solr.VersionUtil;
+import com.frank.search.solr.core.SolrTransactionSynchronizationAdapterBuilder;
+import com.frank.search.solr.core.convert.NumberConverters;
+import com.frank.search.solr.core.geo.GeoConverters;
+import com.frank.search.solr.core.query.HighlightOptions.HighlightParameter;
+import com.frank.search.solr.core.query.result.FacetPage;
+import com.frank.search.solr.core.query.result.HighlightPage;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
+
+import java.util.Collection;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Base implementation of a solr specific
+ * {@link org.springframework.data.repository.query.RepositoryQuery}
+ *
+ * @author Christoph Strobl
+ * @author Luke Corpe
+ * @author Andrey Paramonov
+ * @author Francisco Spaeth
+ */
+public abstract class AbstractSolrQuery implements RepositoryQuery {
+
+	private static final Pattern PARAMETER_PLACEHOLDER = Pattern.compile("\\?(\\d+)");
+
+	private final SolrOperations solrOperations;
+	private final SolrQueryMethod solrQueryMethod;
+
+	public final int UNLIMITED = 1;
+
+	private final GenericConversionService conversionService = new GenericConversionService();
+
+	{
+		if (!conversionService.canConvert(java.util.Date.class, String.class)) {
+			conversionService.addConverter(DateTimeConverters.JavaDateConverter.INSTANCE);
+		}
+		if (!conversionService.canConvert(Number.class, String.class)) {
+			conversionService.addConverter(NumberConverters.NumberConverter.INSTANCE);
+		}
+		if (!conversionService.canConvert(Point.class, String.class)) {
+			conversionService.addConverter(GeoConverters.Point3DToStringConverter.INSTANCE);
+		}
+		if (!conversionService.canConvert(Distance.class, String.class)) {
+			conversionService.addConverter(GeoConverters.DistanceToStringConverter.INSTANCE);
+		}
+		if (VersionUtil.isJodaTimeAvailable()) {
+			if (!conversionService.canConvert(org.joda.time.ReadableInstant.class, String.class)) {
+				conversionService.addConverter(DateTimeConverters.JodaDateTimeConverter.INSTANCE);
+			}
+			if (!conversionService.canConvert(org.joda.time.LocalDateTime.class, String.class)) {
+				conversionService.addConverter(DateTimeConverters.JodaLocalDateTimeConverter.INSTANCE);
+			}
+		}
+	}
+
+	/**
+	 * @param solrOperations
+	 *            must not be null
+	 * @param solrQueryMethod
+	 *            must not be null
+	 */
+	protected AbstractSolrQuery(SolrOperations solrOperations, SolrQueryMethod solrQueryMethod) {
+		Assert.notNull(solrOperations);
+		Assert.notNull(solrQueryMethod);
+		this.solrOperations = solrOperations;
+		this.solrQueryMethod = solrQueryMethod;
+	}
+
+	@Override
+	public Object execute(Object[] parameters) {
+		SolrParameterAccessor accessor = new SolrParametersParameterAccessor(solrQueryMethod, parameters);
+
+		Query query = createQuery(accessor);
+		decorateWithFilterQuery(query, accessor);
+		setDefaultQueryOperatorIfDefined(query);
+		setAllowedQueryExeutionTime(query);
+		setDefTypeIfDefined(query);
+		setRequestHandlerIfDefined(query);
+
+		if (solrQueryMethod.hasStatsDefinition()) {
+			query.setStatsOptions(extractStatsOptions(solrQueryMethod, accessor));
+		}
+
+		if (isCountQuery() && isDeleteQuery()) {
+			throw new InvalidDataAccessApiUsageException("Cannot execute 'delete' and 'count' at the same time.");
+		}
+
+		if (isCountQuery()) {
+			return new CountExecution().execute(query);
+		}
+		if (isDeleteQuery()) {
+			return new DeleteExecution().execute(query);
+		}
+
+		if (solrQueryMethod.isPageQuery() || solrQueryMethod.isSliceQuery()) {
+			if (solrQueryMethod.isFacetQuery() && solrQueryMethod.isHighlightQuery()) {
+				throw new InvalidDataAccessApiUsageException("Facet and Highlight cannot be combined.");
+			}
+			if (solrQueryMethod.isFacetQuery()) {
+				FacetQuery facetQuery = SimpleFacetQuery.fromQuery(query, new SimpleFacetQuery());
+				facetQuery.setFacetOptions(extractFacetOptions(solrQueryMethod, accessor));
+				return new FacetPageExecution(accessor.getPageable()).execute(facetQuery);
+			}
+			if (solrQueryMethod.isHighlightQuery()) {
+				HighlightQuery highlightQuery = SimpleHighlightQuery.fromQuery(query, new SimpleHighlightQuery());
+				highlightQuery.setHighlightOptions(extractHighlightOptions(solrQueryMethod, accessor));
+				return new HighlightPageExecution(accessor.getPageable()).execute(highlightQuery);
+			}
+			return new PagedExecution(accessor.getPageable()).execute(query);
+		} else if (solrQueryMethod.isCollectionQuery()) {
+			return new CollectionExecution(accessor.getPageable()).execute(query);
+		}
+
+		return new SingleEntityExecution().execute(query);
+	}
+
+	@Override
+	public SolrQueryMethod getQueryMethod() {
+		return this.solrQueryMethod;
+	}
+
+	private void setDefaultQueryOperatorIfDefined(Query query) {
+		Query.Operator defaultOperator = solrQueryMethod.getDefaultOperator();
+		if (defaultOperator != null && !Query.Operator.NONE.equals(defaultOperator)) {
+			query.setDefaultOperator(defaultOperator);
+		}
+	}
+
+	private void setAllowedQueryExeutionTime(Query query) {
+		Integer timeAllowed = solrQueryMethod.getTimeAllowed();
+		if (timeAllowed != null) {
+			query.setTimeAllowed(timeAllowed);
+		}
+	}
+
+	private void setDefTypeIfDefined(Query query) {
+		String defType = solrQueryMethod.getDefType();
+		if (StringUtils.hasText(defType)) {
+			query.setDefType(defType);
+		}
+	}
+
+	private void setRequestHandlerIfDefined(Query query) {
+		String requestHandler = solrQueryMethod.getRequestHandler();
+		if (StringUtils.hasText(requestHandler)) {
+			query.setRequestHandler(requestHandler);
+		}
+	}
+
+	private void decorateWithFilterQuery(Query query, SolrParameterAccessor parameterAccessor) {
+		if (solrQueryMethod.hasFilterQuery()) {
+			for (String filterQuery : solrQueryMethod.getFilterQueries()) {
+				query.addFilterQuery(createQueryFromString(filterQuery, parameterAccessor));
+			}
+		}
+	}
+
+	protected void appendProjection(Query query) {
+		if (query != null && this.getQueryMethod().hasProjectionFields()) {
+			for (String fieldname : this.getQueryMethod().getProjectionFields()) {
+				query.addProjectionOnField(new SimpleField(fieldname));
+			}
+		}
+	}
+
+	protected SimpleQuery createQueryFromString(String queryString, SolrParameterAccessor parameterAccessor) {
+		String parsedQueryString = replacePlaceholders(queryString, parameterAccessor);
+		return new SimpleQuery(new SimpleStringCriteria(parsedQueryString));
+	}
+
+	private String replacePlaceholders(String input, SolrParameterAccessor accessor) {
+		if (!StringUtils.hasText(input)) {
+			return input;
+		}
+
+		Matcher matcher = PARAMETER_PLACEHOLDER.matcher(input);
+		String result = input;
+
+		while (matcher.find()) {
+			String group = matcher.group();
+			int index = Integer.parseInt(matcher.group(1));
+			result = result.replace(group, getParameterWithIndex(accessor, index));
+		}
+		return result;
+	}
+
+	@SuppressWarnings("rawtypes")
+	private String getParameterWithIndex(SolrParameterAccessor accessor, int index) {
+		Object parameter = accessor.getBindableValue(index);
+
+		if (parameter == null) {
+			return "null";
+		}
+
+		if (conversionService.canConvert(parameter.getClass(), String.class)) {
+			return conversionService.convert(parameter, String.class);
+		}
+
+		if (parameter instanceof Collection) {
+			StringBuilder sb = new StringBuilder();
+			for (Object o : (Collection) parameter) {
+				if (conversionService.canConvert(o.getClass(), String.class)) {
+					sb.append(conversionService.convert(o, String.class));
+				} else {
+					sb.append(o.toString());
+				}
+				sb.append(" ");
+			}
+			return sb.toString().trim();
+		}
+
+		return parameter.toString();
+	}
+
+	private StatsOptions extractStatsOptions(SolrQueryMethod queryMethod, SolrParameterAccessor accessor) {
+		if (!queryMethod.hasStatsDefinition()) {
+			return null;
+		}
+
+		StatsOptions options = new StatsOptions();
+
+		for (String fieldName : queryMethod.getFieldStats()) {
+			options.addField(fieldName);
+		}
+
+		for (String facetFieldName : queryMethod.getStatsFacets()) {
+			options.addFacet(facetFieldName);
+		}
+
+		options.setCalcDistinct(queryMethod.isFieldStatsCountDistinctEnable());
+
+		Collection<String> selectiveCountDistinct = queryMethod.getStatsSelectiveCountDistinctFields();
+
+		for (Entry<String, String[]> selectiveFacet : queryMethod.getStatsSelectiveFacets().entrySet()) {
+			StatsOptions.FieldStatsOptions fieldStatsOptions = options.addField(selectiveFacet.getKey());
+			for (String facetFieldName : selectiveFacet.getValue()) {
+				fieldStatsOptions.addSelectiveFacet(facetFieldName);
+			}
+
+			fieldStatsOptions.setSelectiveCalcDistinct(selectiveCountDistinct.contains(selectiveFacet.getKey()));
+		}
+
+		return options;
+	}
+
+	private FacetOptions extractFacetOptions(SolrQueryMethod queryMethod, SolrParameterAccessor parameterAccessor) {
+		FacetOptions options = new FacetOptions();
+		if (queryMethod.hasFacetFields()) {
+			options.addFacetOnFlieldnames(queryMethod.getFacetFields());
+		}
+		if (queryMethod.hasFacetQueries()) {
+			for (String queryString : queryMethod.getFacetQueries()) {
+				options.addFacetQuery(createQueryFromString(queryString, parameterAccessor));
+			}
+		}
+		if (queryMethod.hasPivotFields()) {
+			for (String[] pivot : queryMethod.getPivotFields()) {
+				options.addFacetOnPivot(pivot);
+			}
+		}
+		options.setFacetLimit(queryMethod.getFacetLimit());
+		options.setFacetMinCount(queryMethod.getFacetMinCount());
+		options.setFacetPrefix(replacePlaceholders(queryMethod.getFacetPrefix(), parameterAccessor));
+		return options;
+	}
+
+	private HighlightOptions extractHighlightOptions(SolrQueryMethod queryMethod, SolrParameterAccessor accessor) {
+		HighlightOptions options = new HighlightOptions();
+		if (queryMethod.hasHighlightFields()) {
+			options.addFields(queryMethod.getHighlightFieldNames());
+		}
+		Integer fragsize = queryMethod.getHighlightFragsize();
+		if (fragsize != null) {
+			options.setFragsize(fragsize);
+		}
+		Integer snipplets = queryMethod.getHighlighSnipplets();
+		if (snipplets != null) {
+			options.setNrSnipplets(snipplets);
+		}
+		String queryString = queryMethod.getHighlightQuery();
+		if (queryString != null) {
+			options.setQuery(createQueryFromString(queryString, accessor));
+		}
+		appendHighlightFormatOptions(options, solrQueryMethod);
+		return options;
+	}
+
+	private void appendHighlightFormatOptions(HighlightOptions options, SolrQueryMethod queryMethod) {
+		String formatter = queryMethod.getHighlightFormatter();
+		if (formatter != null) {
+			options.setFormatter(formatter);
+		}
+		String highlightPrefix = queryMethod.getHighlightPrefix();
+		if (highlightPrefix != null) {
+			if (isSimpleHighlightingOption(formatter)) {
+				options.setSimplePrefix(highlightPrefix);
+			} else {
+				options.addHighlightParameter(new HighlightParameter(HighlightParams.TAG_PRE, highlightPrefix));
+			}
+		}
+		String highlightPostfix = queryMethod.getHighlightPostfix();
+		if (highlightPostfix != null) {
+			if (isSimpleHighlightingOption(formatter)) {
+				options.setSimplePostfix(highlightPostfix);
+			} else {
+				options.addHighlightParameter(new HighlightParameter(HighlightParams.TAG_POST, highlightPostfix));
+			}
+		}
+	}
+
+	private boolean isSimpleHighlightingOption(String formatter) {
+		return formatter == null || HighlightParams.SIMPLE.equalsIgnoreCase(formatter);
+	}
+
+	protected abstract Query createQuery(SolrParameterAccessor parameterAccessor);
+
+	/**
+	 * @since 1.2
+	 */
+	public boolean isCountQuery() {
+		return false;
+	}
+
+	/**
+	 * @since 1.2
+	 */
+	public boolean isDeleteQuery() {
+		return solrQueryMethod.isDeleteQuery();
+	}
+
+	/**
+	 * @return
+	 * @since 1.3
+	 */
+	public boolean isLimiting() {
+		return false;
+	}
+
+	/**
+	 * @return
+	 * @since 1.3
+	 */
+	public int getLimit() {
+		return UNLIMITED;
+	}
+
+	protected Pageable getLimitingPageable(final Pageable source, final int limit) {
+
+		if (source == null) {
+			return new SolrPageRequest(0, limit);
+		}
+
+		return new PageRequest(source.getPageNumber(), source.getPageSize(), source.getSort()) {
+
+			private static final long serialVersionUID = 8100166028148948968L;
+
+			@Override
+			public int getOffset() {
+				return source.getOffset();
+			}
+
+			@Override
+			public int getPageSize() {
+				return limit;
+			}
+
+		};
+	}
+
+	private interface QueryExecution {
+		Object execute(Query query);
+	}
+
+	/**
+	 * Base class for query execution implementing
+	 * {@link AbstractSolrQuery.QueryExecution}
+	 *
+	 * @author Christoph Strobl
+	 */
+	abstract class AbstractQueryExecution implements QueryExecution {
+
+		protected Page<?> executeFind(Query query) {
+			EntityMetadata<?> metadata = solrQueryMethod.getEntityInformation();
+			return solrOperations.queryForPage(query, metadata.getJavaType());
+		}
+	}
+
+	/**
+	 * Implementation to query solr returning list of data without metadata.
+	 * <br />
+	 * If not pageable argument is set count operation will be executed to
+	 * determine total number of entities to be fetched
+	 *
+	 * @author Christoph Strobl
+	 */
+	class CollectionExecution extends AbstractQueryExecution {
+
+		private final Pageable pageable;
+
+		public CollectionExecution(Pageable pageable) {
+			this.pageable = pageable;
+		}
+
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		@Override
+		public Object execute(Query query) {
+
+			if (!isLimiting()) {
+
+				query.setPageRequest(pageable != null ? pageable : new SolrPageRequest(0, (int) count(query)));
+				return executeFind(query).getContent();
+			}
+
+			if (pageable == null && isLimiting()) {
+				return executeFind(query.setPageRequest(new SolrPageRequest(0, getLimit()))).getContent();
+			}
+
+			if (getLimit() > 0) {
+				if (pageable.getOffset() > getLimit()) {
+					return new PageImpl(java.util.Collections.emptyList(), pageable, getLimit());
+				}
+				if (pageable.getOffset() + pageable.getPageSize() > getLimit()) {
+					query.setPageRequest(getLimitingPageable(pageable, getLimit() - pageable.getOffset()));
+				}
+			}
+			return executeFind(query).getContent();
+		}
+
+		private long count(Query query) {
+			return solrOperations.count(query);
+		}
+
+	}
+
+	/**
+	 * Implementation to query solr returning requested
+	 * {@link org.springframework.data.domain.Page}
+	 * 
+	 * @author Christoph Strobl
+	 */
+	class PagedExecution extends AbstractQueryExecution {
+		private final Pageable pageable;
+
+		public PagedExecution(Pageable pageable) {
+			Assert.notNull(pageable);
+			this.pageable = pageable;
+		}
+
+		@Override
+		public Object execute(Query query) {
+
+			Pageable pageToUse = getPageable();
+
+			if (isLimiting()) {
+
+				int limit = getLimit();
+				if (pageToUse == null) {
+					pageToUse = new SolrPageRequest(0, limit);
+				}
+
+				if (limit > 0) {
+					if (pageToUse.getOffset() > limit) {
+						return new PageImpl(java.util.Collections.emptyList(), pageToUse, limit);
+					}
+					if (pageToUse.getOffset() + pageToUse.getPageSize() > limit) {
+						pageToUse = getLimitingPageable(pageToUse, limit - pageToUse.getOffset());
+					}
+				}
+			}
+
+			query.setPageRequest(pageToUse);
+			return executeFind(query);
+		}
+
+		protected Pageable getPageable() {
+			return this.pageable;
+		}
+	}
+
+	/**
+	 * Implementation to query solr retuning {@link FacetPage}
+	 * 
+	 * @author Christoph Strobl
+	 */
+	class FacetPageExecution extends PagedExecution {
+
+		public FacetPageExecution(Pageable pageable) {
+			super(pageable);
+		}
+
+		@Override
+		protected FacetPage<?> executeFind(Query query) {
+			Assert.isInstanceOf(FacetQuery.class, query);
+
+			EntityMetadata<?> metadata = solrQueryMethod.getEntityInformation();
+			return solrOperations.queryForFacetPage((FacetQuery) query, metadata.getJavaType());
+		}
+
+	}
+
+	/**
+	 * Implementation to execute query returning {@link HighlightPage}
+	 * 
+	 * @author Christoph Strobl
+	 */
+	class HighlightPageExecution extends PagedExecution {
+
+		public HighlightPageExecution(Pageable pageable) {
+			super(pageable);
+		}
+
+		protected HighlightPage<?> executeFind(Query query) {
+			Assert.isInstanceOf(HighlightQuery.class, query);
+
+			EntityMetadata<?> metadata = solrQueryMethod.getEntityInformation();
+			return solrOperations.queryForHighlightPage((HighlightQuery) query, metadata.getJavaType());
+		};
+
+	}
+
+	/**
+	 * Implementation to query solr returning one single entity
+	 * 
+	 * @author Christoph Strobl
+	 */
+	class SingleEntityExecution implements QueryExecution {
+
+		@Override
+		public Object execute(Query query) {
+			EntityMetadata<?> metadata = solrQueryMethod.getEntityInformation();
+			return solrOperations.queryForObject(query, metadata.getJavaType());
+		}
+	}
+
+	/**
+	 * @since 1.2
+	 */
+	class CountExecution implements QueryExecution {
+
+		@Override
+		public Object execute(Query query) {
+			return Long.valueOf(solrOperations.count(query));
+		}
+
+	}
+
+	/**
+	 * @since 1.2
+	 */
+	class DeleteExecution implements QueryExecution {
+
+		@Override
+		public Object execute(Query query) {
+
+			if (TransactionSynchronizationManager.isSynchronizationActive()) {
+				SolrTransactionSynchronizationAdapterBuilder.forOperations(solrOperations).withDefaultBehaviour()
+						.register();
+			}
+
+			Object result = countOrGetDocumentsForDelete(query);
+
+			solrOperations.delete(query);
+			if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+				solrOperations.commit();
+			}
+
+			return result;
+		}
+
+		private Object countOrGetDocumentsForDelete(Query query) {
+
+			Object result = null;
+
+			if (solrQueryMethod.isCollectionQuery()) {
+				Query clone = SimpleQuery.fromQuery(query);
+				result = solrOperations.queryForPage(clone.setPageRequest(new SolrPageRequest(0, Integer.MAX_VALUE)),
+						solrQueryMethod.getEntityInformation().getJavaType()).getContent();
+			}
+
+			if (ClassUtils.isAssignable(Number.class, solrQueryMethod.getReturnedObjectType())) {
+				result = solrOperations.count(query);
+			}
+			return result;
+		}
+	}
+
+}

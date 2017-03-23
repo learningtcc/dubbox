@@ -1,0 +1,2 @@
+http\://www.springframework.org/schema/data/solr/spring-solr-2.0.xsd=../com/frank/search/solr/config/spring-solr-2.0.xsd
+http\://www.springframework.org/schema/data/solr/spring-solr.xsd=../com/frank/search/solr/config/spring-solr-2.0.xsd
