@@ -58,6 +58,7 @@
         <module>dubbo-dts</module>
         <module>dubbo-transactiontree</module>
         <module>dubbo-switch</module>
+        <module>dubbo-hystrix-support</module>
 	</modules>
 	<profiles>
 		<profile>

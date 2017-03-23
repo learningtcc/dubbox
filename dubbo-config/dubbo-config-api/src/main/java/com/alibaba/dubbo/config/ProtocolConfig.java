@@ -42,6 +42,9 @@ public class ProtocolConfig extends AbstractConfig {
 
     // 服务协议
     private String              name;
+    
+    //Docker
+    private String              docker;
 
     // 服务IP地址(多网卡时使用)
     private String              host;
@@ -158,6 +161,14 @@ public class ProtocolConfig extends AbstractConfig {
             id = name;
         }
     }
+    
+    public String getDocker() {
+		return docker;
+	}
+    
+    public void setDocker(String docker) {
+		this.docker = docker;
+	}
 
     @Parameter(excluded = true)
     public String getHost() {
