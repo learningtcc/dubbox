@@ -60,6 +60,7 @@
         <module>dubbo-switch</module>
         <module>dubbo-hystrix-support</module>
         <module>dubbo-solr</module>
+        <module>dubbo-easytrans</module>
 	</modules>
 	<profiles>
 		<profile>
@@ -124,7 +125,7 @@
         <commons_pool2_version>2.4.2</commons_pool2_version>
         <tomcat_embed_version>8.0.41</tomcat_embed_version>
 		<!-- Log libs -->
-		<slf4j_version>1.7.24</slf4j_version>
+		<slf4j_version>1.7.25</slf4j_version>
 		<jcl_version>1.1</jcl_version>
 		<log4j_version>1.2.17</log4j_version>
 		<logback_version>1.1.11</logback_version>
