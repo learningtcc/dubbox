@@ -5,6 +5,8 @@ import java.util.List;
 import javax.annotation.Resource;
 
 import org.github.dtsopensource.core.manager.DTSManager;
+import org.github.dtsopensource.server.schedule.http.impl.HttpServerScheduleProtocol;
+import org.github.dtsopensource.server.schedule.http.impl.Logger;
 import org.github.dtsopensource.server.share.DTSContext;
 import org.github.dtsopensource.server.share.ResultBase;
 import org.github.dtsopensource.server.share.store.entity.ActionEntity;
@@ -22,31 +24,32 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service("hsfServerStoreProtocol")
 public class HSFServerStoreProtocol implements IHSFServerStore {
+	private static final Logger logger = LoggerFactory.getLogger(HSFServerStoreProtocol.class);
 
 	@Resource
 	private DTSManager localDTSManager;
 
 	@Override
 	public ResultBase<DTSContext> openTransaction(ActivityEntity activityEntity) {
-		log.info("--->openTransaction receive request,activityEntity:{}", activityEntity);
+		logger.info("--->openTransaction receive request,activityEntity:{}", activityEntity);
 		ResultBase<DTSContext> resultBase = localDTSManager.openTransaction(activityEntity);
-		log.info("--->openTransaction response,resultBase:{}", resultBase);
+		logger.info("--->openTransaction response,resultBase:{}", resultBase);
 		return resultBase;
 	}
 
 	@Override
 	public ResultBase<String> getAndCreateAction(ActionEntity actionEntity) {
-		log.info("--->getAndCreateAction receive request,actionEntity:{}", actionEntity);
+		logger.info("--->getAndCreateAction receive request,actionEntity:{}", actionEntity);
 		ResultBase<String> resultBase = localDTSManager.getAndCreateAction(actionEntity);
-		log.info("--->getAndCreateAction response,resultBase:{}", resultBase);
+		logger.info("--->getAndCreateAction response,resultBase:{}", resultBase);
 		return resultBase;
 	}
 
 	@Override
 	public ResultBase<String> commitActivity(String activityId) {
-		log.info("--->commitActivity receive request,activityId:{}", activityId);
+		logger.info("--->commitActivity receive request,activityId:{}", activityId);
 		ResultBase<String> resultBase = localDTSManager.commitActivity(activityId);
-		log.info("--->commitActivity response,resultBase:{}", resultBase);
+		logger.info("--->commitActivity response,resultBase:{}", resultBase);
 		return resultBase;
 	}
 

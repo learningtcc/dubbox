@@ -31,9 +31,9 @@ public class JsonRpcProtocol extends AbstractProxyProtocol {
     public static final String ACCESS_CONTROL_ALLOW_METHODS_HEADER = "Access-Control-Allow-Methods";
     public static final String ACCESS_CONTROL_ALLOW_HEADERS_HEADER = "Access-Control-Allow-Headers";
 
-    private final Map<String, HttpServer> serverMap = new ConcurrentHashMap<>();
+    private final Map<String, HttpServer> serverMap = new ConcurrentHashMap<String, HttpServer>();
 
-    private final Map<String, JsonRpcServer> skeletonMap = new ConcurrentHashMap<>();
+    private final Map<String, JsonRpcServer> skeletonMap = new ConcurrentHashMap<String, JsonRpcServer>();
 
     private HttpBinder httpBinder;
 

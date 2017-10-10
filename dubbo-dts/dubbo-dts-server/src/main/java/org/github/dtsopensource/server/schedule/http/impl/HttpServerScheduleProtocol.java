@@ -2,6 +2,7 @@ package org.github.dtsopensource.server.schedule.http.impl;
 
 import java.util.Map;
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.sql.DataSource;
 import org.github.dtsopensource.schedule.LocalDTSSchedule;
 import org.github.dtsopensource.server.schedule.http.IHttpServerSchedule;
@@ -13,21 +14,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author ligaofeng 2016年12月14日 下午2:44:58
  */
-@Slf4j
 public class HttpServerScheduleProtocol implements IHttpServerSchedule {
-
-	@Getter
-	@Setter
+	private static final Logger logger = LoggerFactory.getLogger(HttpServerScheduleProtocol.class);
+	
+	@Resource
 	private DataSource dataSource;
-	@Getter
-	@Setter
+
+	@Resource
 	private Map<String, IDTSTaskTracker> taskTrackerMap;
 
 	private IDTSSchedule localDTSSchedule;
@@ -45,7 +42,7 @@ public class HttpServerScheduleProtocol implements IHttpServerSchedule {
 
 	@Override
 	public void executeTask(TaskTrackerContext taskTrackerContext) throws DTSBizException {
-		log.info("--->dts-server success recevie:{}", taskTrackerContext);
+		logger.info("--->dts-server success recevie:{}", taskTrackerContext);
 		String taskTrackerType = taskTrackerContext.getTaskTrackerType();
 		IDTSTaskTracker taskTracker = taskTrackerMap.get(taskTrackerType);
 		if (taskTracker == null) {
