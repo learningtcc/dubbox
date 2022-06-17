@@ -20,7 +20,7 @@
 		<druid.version>1.0.28</druid.version>
 		<commons.lang.version>2.6</commons.lang.version>
 		<guava.version>21.0</guava.version>
-		<fastjson.version>1.2.24</fastjson.version>
+		<fastjson.version>1.2.83</fastjson.version>
 		<dts.server.share.version>1.0.0-SNAPSHOT</dts.server.share.version>
 	</properties>
 
