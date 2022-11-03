@@ -23,7 +23,7 @@
 		<druid.version>1.0.29</druid.version>
 		<aspectj.version>1.8.10</aspectj.version>
 		<jackson.version>1.9.13</jackson.version>
-		<fileupload.version>1.2.2</fileupload.version>
+		<fileupload.version>1.3.3</fileupload.version>
 		<servlet.version>3.1.0</servlet.version>
 		<log4j.version>1.2.17</log4j.version>
 		<fastjson.version>1.2.29</fastjson.version>
